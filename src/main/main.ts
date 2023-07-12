@@ -8,12 +8,62 @@
  * When running `npm run build` or `npm run build:main`, this file is compiled to
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
-import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import * as cp from 'child_process';
+import { ChildProcess } from 'child_process';
+import { BrowserWindow, app, ipcMain, shell } from 'electron';
 import log from 'electron-log';
+import { autoUpdater } from 'electron-updater';
+import path from 'path';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+
+let pyProc: ChildProcess | null = null;
+let pyPort = null;
+
+const createPyProc = () => {
+  console.log('createPyProc', process.env.NODE_ENV);
+  let port = '4242';
+  if (process.env.NODE_ENV === 'development') {
+    // dev
+    const script = path.join(__dirname, 'py', '../../../py/api.py');
+    console.log('script', script);
+    pyProc = cp.spawn('python', [script, port]);
+  } else {
+    // prod
+    const script = path.join(__dirname, '../../../pydist', 'api', 'api.exe');
+    console.log(script);
+    pyProc = cp.execFile(script, [port]);
+  }
+
+  let errorOut = '';
+  pyProc?.stderr?.on('data', (data: string) => {
+    errorOut += data;
+  });
+  let stdOut = '';
+  pyProc?.stdout?.on('data', (data: string) => {
+    stdOut += data;
+  });
+  pyProc?.on('error', (err: any) => {
+    console.log('Failed to start child process 1.');
+  });
+  pyProc.once('exit', (code: number, signal: string) => {
+    console.log('exit', code, signal);
+    console.log(stdOut);
+    console.log(errorOut);
+  });
+  if (pyProc != null) {
+    console.log('child process success');
+  }
+};
+
+const exitPyProc = () => {
+  pyProc?.kill();
+  pyProc = null;
+  pyPort = null;
+};
+
+app.on('ready', createPyProc);
+app.on('will-quit', exitPyProc);
 
 class AppUpdater {
   constructor() {
@@ -40,8 +90,8 @@ const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
 if (isDebug) {
-  require('electron-debug')();
 }
+require('electron-debug')();
 
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
@@ -82,6 +132,7 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
@@ -92,6 +143,8 @@ const createWindow = async () => {
     } else {
       mainWindow.show();
     }
+    const script = path.join(__dirname, '../../../pydist', 'api', 'api.exe');
+    mainWindow.webContents.send('script', script);
   });
 
   mainWindow.on('closed', () => {

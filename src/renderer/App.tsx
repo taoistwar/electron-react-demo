@@ -1,10 +1,12 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import icon from '../../assets/icon.svg';
 import './App.css';
+import { Home } from './home/Home';
 
 function Hello() {
   return (
     <div>
+      <Home name="test"></Home>
       <div className="Hello">
         <img width="200" alt="icon" src={icon} />
       </div>

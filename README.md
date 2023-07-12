@@ -32,11 +32,20 @@ npm install
 
 **Having issues installing? See our [debugging guide](https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues/400)**
 
+### python
+
+```bash
+conda create -n electron python=3.10
+conda activate electron
+pip install flask flask-cors
+```
+
 ## Starting Development
 
 Start the app in the `dev` environment:
 
 ```bash
+conda activate electron
 npm start
 ```
 
@@ -45,6 +54,8 @@ npm start
 To package apps for the local platform:
 
 ```bash
+conda activate electron
+pyinstaller ./py/api.py --clean --distpath ./pydist
 npm run package
 ```
 
@@ -54,7 +65,7 @@ See our [docs and guides here](https://electron-react-boilerplate.js.org/docs/in
 
 ## Community
 
-Join our Discord: https://discord.gg/Fjy3vfgy5q
+Join our Discord: <https://discord.gg/Fjy3vfgy5q>
 
 ## Sponsors
 
