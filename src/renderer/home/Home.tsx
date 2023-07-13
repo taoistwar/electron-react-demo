@@ -54,7 +54,7 @@ export class Home extends React.Component<HomeProps, HomeState> {
             this.deal();
           }}
         >
-          {this.state.title}
+          test
         </button>
         <p id="res" color="black"></p>
       </div>
